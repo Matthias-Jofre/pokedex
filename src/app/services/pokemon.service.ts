@@ -1,0 +1,60 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/dot-notation */
+/* eslint-disable arrow-body-style */
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { map } from 'rxjs/operators';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PokemonService {
+  baseUrl = 'https://pokeapi.co/api/v2';
+  imageUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+
+  constructor(private http: HttpClient) {
+
+   }
+
+  getPokemon(offset = 0) {
+    return this.http.get(`${this.baseUrl}/pokemon?offset=${offset}&limit=25`).pipe(
+      map(result => {
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        return result ['results'];
+      }),
+      map(pokemons => {
+        return pokemons.map((poke, index) => {
+          poke.image = this.getPokeImage(index + offset + 1);
+          poke.pokeIndex = offset + index + 1;
+          return poke;
+        });
+      })
+    );
+  }
+
+  getPokeImage(index) {
+    return `${this.imageUrl}${index}.png`;
+  }
+
+  findPokemon(serach) {
+    return this.http.get(`${this.baseUrl}/pokemon/${serach}`).pipe(
+      map(pokemon => {
+        pokemon ['image'] = this.getPokeImage(pokemon['id']);
+        pokemon ['pokeIndex'] = pokemon['id'];
+        return pokemon;
+      })
+    );
+  }
+
+  getPokeDetails(index) {
+    return this.http.get(`${this.baseUrl}/pokemon/${index}`).pipe(
+      map(poke => {
+        let sprites = Object.keys(poke['sprites']);
+        poke['images'] = sprites
+        .map(spriteKey => poke['sprites'][spriteKey])
+        .filter(img => img);
+        return poke;
+      })
+    );
+  }
+}
